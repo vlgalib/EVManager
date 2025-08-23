@@ -27,8 +27,7 @@ const AppInner: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isTierModalOpen, setIsTierModalOpen] = useState(false);
   const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(() => {
-    const saved = localStorage.getItem('autoRefreshEnabled');
-    return saved === 'true' ? true : false;
+    return localStorage.getItem('autoRefreshEnabled') === 'true';
   });
   const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');

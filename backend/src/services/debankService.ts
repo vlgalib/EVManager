@@ -633,6 +633,7 @@ export class DeBankService {
                 this.logger.debug(`Высокий токен: ${token.symbol} - ${token.amount} x $${token.price} = $${tokenValue.toFixed(2)}`, { walletAddress });
               }
               
+
               // Добавляем каждый токен отдельно без проверки на дубликаты
               walletData.tokens.push({
                 symbol: token.symbol,
@@ -642,7 +643,8 @@ export class DeBankService {
                 price: token.price || 0,
                 chain: token.chain || 'unknown',
                 logo: token.logo_url,
-                priceChange24h: token.price_24h_change || 0
+                priceChange24h: token.price_24h_change || 0,
+                address: token.id // Add token contract address for better identification
               });
               
               totalTokensValue += tokenValue;
@@ -714,6 +716,7 @@ export class DeBankService {
             });
             
             let protocolTotalValue = 0;
+            const protocolTokens: any[] = [];
             
             // Обрабатываем portfolio_item_list для каждого протокола
             if (protocol.portfolio_item_list && Array.isArray(protocol.portfolio_item_list)) {
@@ -724,11 +727,64 @@ export class DeBankService {
                 const itemValue = item.stats?.net_usd_value || 0;
                 protocolTotalValue += itemValue;
                 
+                // Извлекаем информацию о токенах из элемента протокола
+                if (item.detail && item.detail.supply_token_list) {
+                  item.detail.supply_token_list.forEach((token: any) => {
+                    if (token.amount > 0) {
+                      protocolTokens.push({
+                        symbol: token.symbol || 'Unknown',
+                        name: token.name || token.symbol || 'Unknown Token',
+                        value: (token.amount || 0) * (token.price || 0),
+                        amount: token.amount || 0,
+                        logo: token.logo_url,
+                        category: 'supply'
+                      });
+                    }
+                  });
+                }
+                
+                // Также проверяем reward_token_list если есть
+                if (item.detail && item.detail.reward_token_list) {
+                  item.detail.reward_token_list.forEach((token: any) => {
+                    if (token.amount > 0) {
+                      protocolTokens.push({
+                        symbol: token.symbol || 'Unknown',
+                        name: token.name || token.symbol || 'Unknown Token',
+                        value: (token.amount || 0) * (token.price || 0),
+                        amount: token.amount || 0,
+                        logo: token.logo_url,
+                        category: 'reward'
+                      });
+                    }
+                  });
+                }
+                
+                // Проверяем основные токены в description
+                if (item.detail && item.detail.description) {
+                  // Иногда токены находятся прямо в description
+                  const desc = item.detail.description;
+                  if (desc.other_token_list) {
+                    desc.other_token_list.forEach((token: any) => {
+                      if (token.amount > 0) {
+                        protocolTokens.push({
+                          symbol: token.symbol || 'Unknown',
+                          name: token.name || token.symbol || 'Unknown Token',
+                          value: (token.amount || 0) * (token.price || 0),
+                          amount: token.amount || 0,
+                          logo: token.logo_url,
+                          category: 'other'
+                        });
+                      }
+                    });
+                  }
+                }
+                
                 this.logger.debug(`Элемент ${itemIndex} протокола ${protocol.name}:`, {
                   walletAddress,
                   itemValue,
                   itemStats: item.stats,
-                  itemKeys: Object.keys(item || {})
+                  itemKeys: Object.keys(item || {}),
+                  tokenCount: protocolTokens.length
                 });
               });
             } else {
@@ -760,7 +816,8 @@ export class DeBankService {
               value: protocolTotalValue,
               chain: protocol.chain || 'unknown',
               category: 'defi',
-              logo: protocol.logo_url || undefined
+              logo: protocol.logo_url || undefined,
+              tokens: protocolTokens.length > 0 ? protocolTokens : undefined
             });
             this.logger.debug(`Добавлен протокол: ${protocol.name} - $${protocolTotalValue.toFixed(2)}`, { walletAddress });
           });

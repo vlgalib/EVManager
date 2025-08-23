@@ -801,47 +801,51 @@ const ProtocolsTab: React.FC = () => {
                                         "flex items-center justify-between py-2 px-4 rounded-lg",
                                         theme === 'dark' ? "bg-slate-700/30" : "bg-gray-100"
                                       )}>
-                                        <div className="flex items-center gap-3">
-                                          <div className={cn(
-                                            "text-sm font-mono",
-                                            theme === 'dark' ? "text-slate-300" : "text-gray-600"
-                                          )}>
-                                            #{walletData.wallet.id}
+                                        <div className="flex flex-col gap-2">
+                                          <div className="flex items-center gap-3">
+                                            <div className={cn(
+                                              "text-sm font-mono",
+                                              theme === 'dark' ? "text-slate-300" : "text-gray-600"
+                                            )}>
+                                              #{walletData.wallet.id}
+                                            </div>
+                                            <div className={cn(
+                                              "text-sm font-mono",
+                                              theme === 'dark' ? "text-blue-400" : "text-blue-600"
+                                            )}>
+                                              {walletData.wallet.address.slice(0, 6)}...{walletData.wallet.address.slice(-4)}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <button
+                                                onClick={() => copyToClipboard(walletData.wallet.address)}
+                                                className={cn(
+                                                  "p-1 rounded transition-colors",
+                                                  theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
+                                                )}
+                                                title={t('wallets.copyAddress')}
+                                              >
+                                                <Copy className={cn(
+                                                  "w-3 h-3",
+                                                  theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
+                                                )} />
+                                              </button>
+                                              <button
+                                                onClick={() => window.open(`https://debank.com/profile/${walletData.wallet.address}`, '_blank')}
+                                                className={cn(
+                                                  "p-1 rounded transition-colors",
+                                                  theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
+                                                )}
+                                                title={t('wallets.openInDeBank')}
+                                              >
+                                                <ExternalLink className={cn(
+                                                  "w-3 h-3",
+                                                  theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
+                                                )} />
+                                              </button>
+                                            </div>
                                           </div>
-                                          <div className={cn(
-                                            "text-sm font-mono",
-                                            theme === 'dark' ? "text-blue-400" : "text-blue-600"
-                                          )}>
-                                            {walletData.wallet.address.slice(0, 6)}...{walletData.wallet.address.slice(-4)}
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <button
-                                              onClick={() => copyToClipboard(walletData.wallet.address)}
-                                              className={cn(
-                                                "p-1 rounded transition-colors",
-                                                theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
-                                              )}
-                                              title={t('wallets.copyAddress')}
-                                            >
-                                              <Copy className={cn(
-                                                "w-3 h-3",
-                                                theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
-                                              )} />
-                                            </button>
-                                            <button
-                                              onClick={() => window.open(`https://debank.com/profile/${walletData.wallet.address}`, '_blank')}
-                                              className={cn(
-                                                "p-1 rounded transition-colors",
-                                                theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
-                                              )}
-                                              title={t('wallets.openInDeBank')}
-                                            >
-                                              <ExternalLink className={cn(
-                                                "w-3 h-3",
-                                                theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
-                                              )} />
-                                            </button>
-                                          </div>
+                                          
+                                          {/* Networks */}
                                           <div className="flex flex-wrap gap-1">
                                             {(walletData.protocol.chains || [walletData.protocol.chain]).map((chain, chainIndex) => (
                                               <div key={chainIndex} className="flex items-center space-x-1">
@@ -856,6 +860,29 @@ const ProtocolsTab: React.FC = () => {
                                               </div>
                                             ))}
                                           </div>
+
+                                          {/* Wallet-specific Protocol Tokens */}
+                                          {walletData.protocol.tokens && walletData.protocol.tokens.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                              {walletData.protocol.tokens.slice(0, 6).map((token, tokenIndex) => (
+                                                <div key={tokenIndex} className="flex items-center space-x-1">
+                                                  <LogoImage
+                                                    src={token.logo}
+                                                    alt={token.symbol}
+                                                    size="sm"
+                                                  />
+                                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-900/20 text-purple-400">
+                                                    {token.symbol}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                              {walletData.protocol.tokens.length > 6 && (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-700/50 text-slate-400">
+                                                  +{walletData.protocol.tokens.length - 6}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                         <div className={cn(
                                           "text-sm font-medium",
@@ -1020,47 +1047,51 @@ const ProtocolsTab: React.FC = () => {
                               "flex items-center justify-between py-2 px-3 rounded-lg",
                               theme === 'dark' ? "bg-slate-600/30" : "bg-gray-100"
                             )}>
-                              <div className="flex items-center gap-3">
-                                <div className={cn(
-                                  "text-sm font-mono",
-                                  theme === 'dark' ? "text-slate-300" : "text-gray-600"
-                                )}>
-                                  #{walletData.wallet.id}
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "text-sm font-mono",
+                                    theme === 'dark' ? "text-slate-300" : "text-gray-600"
+                                  )}>
+                                    #{walletData.wallet.id}
+                                  </div>
+                                  <div className={cn(
+                                    "text-sm font-mono",
+                                    theme === 'dark' ? "text-blue-400" : "text-blue-600"
+                                  )}>
+                                    {walletData.wallet.address.slice(0, 6)}...{walletData.wallet.address.slice(-4)}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => copyToClipboard(walletData.wallet.address)}
+                                      className={cn(
+                                        "p-1 rounded transition-colors",
+                                        theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
+                                      )}
+                                      title={t('wallets.copyAddress')}
+                                    >
+                                      <Copy className={cn(
+                                        "w-3 h-3",
+                                        theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
+                                      )} />
+                                    </button>
+                                    <button
+                                      onClick={() => window.open(`https://debank.com/profile/${walletData.wallet.address}`, '_blank')}
+                                      className={cn(
+                                        "p-1 rounded transition-colors",
+                                        theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
+                                      )}
+                                      title={t('wallets.openInDeBank')}
+                                    >
+                                      <ExternalLink className={cn(
+                                        "w-3 h-3",
+                                        theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
+                                      )} />
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className={cn(
-                                  "text-sm font-mono",
-                                  theme === 'dark' ? "text-blue-400" : "text-blue-600"
-                                )}>
-                                  {walletData.wallet.address.slice(0, 6)}...{walletData.wallet.address.slice(-4)}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => copyToClipboard(walletData.wallet.address)}
-                                    className={cn(
-                                      "p-1 rounded transition-colors",
-                                      theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
-                                    )}
-                                    title={t('wallets.copyAddress')}
-                                  >
-                                    <Copy className={cn(
-                                      "w-3 h-3",
-                                      theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
-                                    )} />
-                                  </button>
-                                  <button
-                                    onClick={() => window.open(`https://debank.com/profile/${walletData.wallet.address}`, '_blank')}
-                                    className={cn(
-                                      "p-1 rounded transition-colors",
-                                      theme === 'dark' ? "hover:bg-slate-600" : "hover:bg-gray-200"
-                                    )}
-                                    title={t('wallets.openInDeBank')}
-                                  >
-                                    <ExternalLink className={cn(
-                                      "w-3 h-3",
-                                      theme === 'dark' ? "text-slate-400 hover:text-slate-300" : "text-gray-500 hover:text-gray-700"
-                                    )} />
-                                  </button>
-                                </div>
+
+                                {/* Networks */}
                                 <div className="flex flex-wrap gap-1">
                                   {(walletData.protocol.chains || [walletData.protocol.chain]).map((chain, chainIndex) => (
                                     <div key={chainIndex} className="flex items-center space-x-1">
@@ -1075,6 +1106,29 @@ const ProtocolsTab: React.FC = () => {
                                     </div>
                                   ))}
                                 </div>
+
+                                {/* Wallet-specific Protocol Tokens */}
+                                {walletData.protocol.tokens && walletData.protocol.tokens.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {walletData.protocol.tokens.slice(0, 5).map((token, tokenIndex) => (
+                                      <div key={tokenIndex} className="flex items-center space-x-1">
+                                        <LogoImage
+                                          src={token.logo}
+                                          alt={token.symbol}
+                                          size="sm"
+                                        />
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-900/20 text-purple-400">
+                                          {token.symbol}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {walletData.protocol.tokens.length > 5 && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-700/50 text-slate-400">
+                                        +{walletData.protocol.tokens.length - 5}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               <div className={cn(
                                 "text-sm font-medium",

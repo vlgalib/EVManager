@@ -12,6 +12,7 @@ export class ProxyService {
   private circuitBreakers = new Map<string, { failures: number; lastFailure: number; isOpen: boolean }>();
   private readonly CIRCUIT_BREAKER_THRESHOLD = 5; // Количество ошибок для размыкания
   private readonly CIRCUIT_BREAKER_TIMEOUT = 300000; // 5 минут до попытки восстановления
+  private lastCheckDate: string = '';
   private logger: LoggerService;
 
   constructor() {
@@ -467,6 +468,13 @@ export class ProxyService {
       return;
     }
 
+    // Check if all proxies were already checked today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    if (this.lastCheckDate === today && this.workingProxies.size + this.failedProxies.size === this.proxies.length) {
+      this.logger.info(`All proxies already checked today (${today}), skipping automatic check`);
+      return;
+    }
+
     this.isCheckingProxies = true;
     
     try {
@@ -573,6 +581,9 @@ export class ProxyService {
 
       const workingCount = this.getWorkingProxyCount();
       this.logger.info(`Проверка завершена. Работающих прокси: ${workingCount}/${authProxies.length}`);
+      
+      // Update last check date
+      this.lastCheckDate = new Date().toISOString().split('T')[0];
     } catch (error) {
       this.logger.error('Ошибка при проверке прокси:', error);
     } finally {

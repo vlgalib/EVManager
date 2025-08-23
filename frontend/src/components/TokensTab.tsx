@@ -723,27 +723,30 @@ const TokensTab: React.FC = () => {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={(() => {
-                // Агрегируем токены по символу для графика (объединяем разные сети)
-                const tokensBySymbol = new Map<string, TokenData>();
-                filteredTokens.forEach(token => {
-                  if (tokensBySymbol.has(token.symbol)) {
-                    const existing = tokensBySymbol.get(token.symbol)!;
-                    existing.balance += token.balance;
-                    existing.value += token.value;
-                    // Средневзвешенная цена
-                    existing.price = existing.value / existing.balance;
-                  } else {
-                    tokensBySymbol.set(token.symbol, { ...token });
-                  }
-                });
-                
-                const topTokens = Array.from(tokensBySymbol.values())
+                // Use properly aggregated data from backend instead of re-aggregating
+                // Backend already handles latest price logic correctly
+                const topTokens = tokens
+                  .filter(token => token.chain === 'all') // Use only aggregated tokens from backend
                   .sort((a, b) => b.value - a.value)
                   .slice(0, 10);
+                
+                if (topTokens.length === 0) {
+                  // Fallback: if no aggregated data, use filtered tokens but don't recalculate prices
+                  const fallbackTokens = filteredTokens
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 10);
+                  const totalValue = fallbackTokens.reduce((sum, token) => sum + token.value, 0);
+                  return fallbackTokens.map(token => ({
+                    ...token,
+                    displayName: token.symbol,
+                    percentage: (token.value / totalValue) * 100
+                  }));
+                }
+                
                 const totalValue = topTokens.reduce((sum, token) => sum + token.value, 0);
                 return topTokens.map(token => ({
                   ...token,
-                  displayName: token.symbol, // Убираем название сети для агрегированного графика
+                  displayName: token.symbol,
                   percentage: (token.value / totalValue) * 100
                 }));
               })()}>

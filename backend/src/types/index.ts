@@ -41,6 +41,16 @@ export type ProtocolData = {
   category: string;
   logo?: string;
   chains?: string[]; // Массив сетей для агрегированных протоколов
+  tokens?: ProtocolToken[]; // Токены внутри протокола
+};
+
+export type ProtocolToken = {
+  symbol: string;
+  name: string;
+  value: number;
+  amount: number;
+  logo?: string;
+  category?: string; // lending, liquidity, staking, etc.
 };
 
 export type ProxyConfig = {

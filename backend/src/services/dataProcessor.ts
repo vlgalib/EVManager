@@ -19,7 +19,14 @@ export class DataProcessor {
     const allChains = new Map<string, ChainData>();
     const allProtocols = new Map<string, ProtocolData>();
 
-    wallets.forEach(wallet => {
+    // Sort wallets by lastUpdated to prioritize fresh data
+    const sortedWallets = [...wallets].sort((a, b) => 
+      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    );
+
+    sortedWallets.forEach(wallet => {
+      const walletUpdateTime = new Date(wallet.lastUpdated).getTime();
+      
       // Суммируем общие значения
       aggregated.totalValue += wallet.totalValue;
       aggregated.totalChange24h += wallet.change24h;
@@ -36,24 +43,53 @@ export class DataProcessor {
           allTokensByChain.set(chainKey, { ...token });
         }
 
-        // Новая логика - агрегированные по символу
-        const symbolKey = token.symbol;
+        // Новая логика - агрегированные по символу с использованием самой свежей цены
+        // Special handling for stablecoins: group by symbol only (across all chains)
+        // For other tokens: use symbol + name to distinguish different tokens (e.g., ZK vs ZKJ)
+        
+        // Normalize token symbol for grouping (handle special cases like USD₮0 -> USDT)
+        let normalizedSymbol = token.symbol;
+        if (token.symbol === 'USD₮0' || token.symbol === 'USD\u20AE0') {
+          normalizedSymbol = 'USDT';
+        }
+        
+        const stablecoins = ['USDT', 'USDC', 'DAI', 'BUSD', 'FRAX', 'TUSD', 'USDD', 'LUSD'];
+        const isStablecoin = stablecoins.includes(normalizedSymbol);
+        const symbolKey = isStablecoin 
+          ? normalizedSymbol 
+          : `${token.symbol}|${token.name || token.symbol}`;
+        
         if (allTokensBySymbol.has(symbolKey)) {
           const existing = allTokensBySymbol.get(symbolKey)!;
+          
+          
           existing.balance += token.balance;
           existing.value += token.value;
-          existing.price = existing.value / existing.balance; // Средневзвешенная цена
+          
+          // Use the price from the most recently updated wallet instead of weighted average
+          // Since wallets are sorted by lastUpdated (newest first), the first occurrence has the freshest price
+          // Only update price if this wallet is newer than what we already have
+          const existingLastUpdate = (existing as any).lastUpdateTime || 0;
+          if (walletUpdateTime >= existingLastUpdate) {
+            existing.price = token.price; // Use latest price instead of weighted average
+            (existing as any).lastUpdateTime = walletUpdateTime; // Track when this price was set
+            existing.priceChange24h = token.priceChange24h; // Also update price change
+          }
+          
           // Добавляем сеть в список если её там еще нет
           if (existing.chains && !existing.chains.includes(token.chain)) {
             existing.chains.push(token.chain);
           }
         } else {
+          
           // Создаем новый токен со списком сетей
           allTokensBySymbol.set(symbolKey, { 
             ...token,
+            symbol: normalizedSymbol, // Use normalized symbol for display
             chain: 'all', // Обозначаем что это агрегированные данные
-            chains: [token.chain] // Начинаем с текущей сети
-          });
+            chains: [token.chain], // Начинаем с текущей сети
+            lastUpdateTime: walletUpdateTime // Track when this price was set
+          } as any);
         }
       });
 
@@ -62,13 +98,20 @@ export class DataProcessor {
         if (allChains.has(chain.name)) {
           const existing = allChains.get(chain.name)!;
           existing.value += chain.value;
-          // Объединяем токены без дублирования
+          // Объединяем токены без дублирования, используя свежие цены
           chain.tokens.forEach(token => {
             const existingToken = existing.tokens.find(t => t.symbol === token.symbol && t.address === token.address);
             if (existingToken) {
               existingToken.balance += token.balance;
               existingToken.value += token.value;
-              existingToken.price = existingToken.balance > 0 ? existingToken.value / existingToken.balance : 0;
+              
+              // Use latest price from most recent wallet instead of weighted average
+              const existingTokenLastUpdate = (existingToken as any).lastUpdateTime || 0;
+              if (walletUpdateTime >= existingTokenLastUpdate) {
+                existingToken.price = token.price; // Use latest price
+                existingToken.priceChange24h = token.priceChange24h; // Also update price change
+                (existingToken as any).lastUpdateTime = walletUpdateTime;
+              }
             } else {
               existing.tokens.push({
                 symbol: token.symbol,
@@ -79,8 +122,9 @@ export class DataProcessor {
                 chain: token.chain,
                 logo: token.logo,
                 priceChange24h: token.priceChange24h,
-                address: token.address
-              });
+                address: token.address,
+                lastUpdateTime: walletUpdateTime
+              } as any);
             }
           });
         } else {
@@ -112,30 +156,64 @@ export class DataProcessor {
           if (existing.chains && !existing.chains.includes(protocol.chain)) {
             existing.chains.push(protocol.chain);
           }
+          
+          // Агрегируем токены протокола
+          if (protocol.tokens && protocol.tokens.length > 0) {
+            if (!existing.tokens) {
+              existing.tokens = [];
+            }
+            
+            protocol.tokens.forEach(token => {
+              // Ищем существующий токен по символу
+              const existingToken = existing.tokens!.find(t => 
+                t.symbol === token.symbol && t.category === token.category
+              );
+              
+              if (existingToken) {
+                existingToken.amount += token.amount;
+                existingToken.value += token.value;
+              } else {
+                existing.tokens!.push({ ...token });
+              }
+            });
+          }
         } else {
           // Создаем новый протокол со списком сетей
           allProtocols.set(key, { 
             ...protocol,
             chain: 'all', // Обозначаем что это агрегированные данные
-            chains: [protocol.chain] // Начинаем с текущей сети
+            chains: [protocol.chain], // Начинаем с текущей сети
+            tokens: protocol.tokens ? [...protocol.tokens] : undefined // Копируем токены
           });
         }
       });
 
     });
 
+    // Clean up temporary fields and prepare final data
+    const cleanToken = (token: any): TokenData => {
+      const { lastUpdateTime, ...cleanedToken } = token;
+      return cleanedToken as TokenData;
+    };
+
     // topTokens - для графиков на главной странице (агрегированные по символу)
     aggregated.topTokens = Array.from(allTokensBySymbol.values())
+      .map(cleanToken)
       .sort((a, b) => b.value - a.value)
       .slice(0, 20);
 
     // detailedTopTokens - для страницы Токены (агрегированные по символу с информацией о сетях)
     aggregated.detailedTopTokens = Array.from(allTokensBySymbol.values())
+      .map(cleanToken)
       .sort((a, b) => b.value - a.value)
       .slice(0, 100); // Увеличиваем до 100 чтобы показать больше токенов
 
-    // Сортируем и берем топ цепочки
+    // Сортируем и берем топ цепочки (clean temporary fields from tokens within chains)
     aggregated.topChains = Array.from(allChains.values())
+      .map(chain => ({
+        ...chain,
+        tokens: chain.tokens.map(cleanToken)
+      }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -419,8 +497,17 @@ export class DataProcessor {
     
     wallets.forEach(wallet => {
       wallet.tokens.forEach(token => {
-        // Если tokenChain === 'all', ищем по всем сетям, иначе по конкретной сети
-        if (token.symbol === tokenSymbol && (tokenChain === 'all' || token.chain === tokenChain)) {
+        // Normalize token symbol for comparison (handle USD₮0 -> USDT)
+        let normalizedTokenSymbol = token.symbol;
+        if (token.symbol === 'USD₮0' || token.symbol === 'USD\u20AE0') {
+          normalizedTokenSymbol = 'USDT';
+        }
+        
+        // Check if normalized symbol matches the search symbol and chain matches
+        const symbolMatches = normalizedTokenSymbol === tokenSymbol;
+        const chainMatches = (tokenChain === 'all' || token.chain === tokenChain);
+        
+        if (symbolMatches && chainMatches) {
           results.push({
             wallet,
             token
@@ -520,7 +607,9 @@ export class DataProcessor {
     const aggregatedMap = new Map<string, { wallet: WalletData; token: TokenData; chains: string[] }>();
     
     results.forEach(({ wallet, token }) => {
-      const key = wallet.address;
+      // Use wallet address + original token symbol + name as key to preserve different token types
+      // This ensures USDT and USD₮0 are kept separate even for the same wallet
+      const key = `${wallet.address}|${token.symbol}|${token.name || token.symbol}`;
       
       if (aggregatedMap.has(key)) {
         const existing = aggregatedMap.get(key)!;

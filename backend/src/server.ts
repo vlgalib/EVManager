@@ -419,6 +419,7 @@ app.post('/api/protocols/filter', (req, res) => {
   }
 });
 
+
 // Export to CSV
 app.post('/api/export/csv', async (req, res) => {
   try {
@@ -1643,7 +1644,7 @@ const server = app.listen(PORT, async () => {
     
     const updateTokenPrices = async () => {
       try {
-        logger.info('Starting token price update...');
+        logger.info('Starting automatic token price update...');
         
         // Get all wallets with tokens
         const wallets = getCurrentWalletsData();
@@ -1673,18 +1674,18 @@ const server = app.listen(PORT, async () => {
           try {
             // Обновляем данные кошелька для получения свежих цен
             await debankService.getWalletData(wallet.address);
-            logger.info(`Обновлены цены для кошелька ${wallet.address.slice(0, 8)}...`);
+            logger.info(`Updated prices for wallet ${wallet.address.slice(0, 8)}...`);
             
             // Делаем небольшую паузу между запросами
             await new Promise(resolve => setTimeout(resolve, 2000));
           } catch (error) {
-            logger.error(`Ошибка обновления цен для кошелька ${wallet.address}:`, error);
+            logger.error(`Error updating prices for wallet ${wallet.address}:`, error);
           }
         }
 
-        logger.info('Автоматическое обновление цен токенов завершено');
+        logger.info('Automatic token price update completed');
       } catch (error) {
-        logger.error('Ошибка при автоматическом обновлении цен:', error);
+        logger.error('Error during automatic token price update:', error);
       }
     };
 
