@@ -283,7 +283,12 @@ const translations = {
     'status.idle': 'Idle',
     'status.errors': 'errors',
     'status.database': 'DB',
-    'status.mb': 'MB'
+    'status.mb': 'MB',
+    'status.connectionError': 'Connection error. Backend server is not available.',
+    
+    // Error messages
+    'errors.proxyCheck': 'Proxy check error: ',
+    'errors.unknown': 'Unknown error'
   },
   ru: {
     // Header
@@ -555,7 +560,12 @@ const translations = {
     'status.idle': 'Ожидание',
     'status.errors': 'ошибок',
     'status.database': 'БД',
-    'status.mb': 'МБ'
+    'status.mb': 'МБ',
+    'status.connectionError': 'Ошибка подключения. Сервер не доступен.',
+    
+    // Error messages
+    'errors.proxyCheck': 'Ошибка проверки прокси: ',
+    'errors.unknown': 'Неизвестная ошибка'
   }
 };
 

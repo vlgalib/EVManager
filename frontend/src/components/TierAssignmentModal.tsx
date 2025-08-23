@@ -13,21 +13,35 @@ const TierAssignmentModal: React.FC<TierAssignmentModalProps> = ({ isOpen, onClo
   const { showNotification, showNotificationWithKey } = useNotification();
   const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [tierRanges, setTierRanges] = useState({
-    tier1: { from: 0, to: 0 },
-    tier2: { from: 0, to: 0 },
-    tier3: { from: 0, to: 0 }
+  // Загрузка сохраненных диапазонов тиров из localStorage при инициализации
+  const [tierRanges, setTierRanges] = useState(() => {
+    const saved = localStorage.getItem('tierRanges');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.error('Error parsing saved tier ranges:', error);
+      }
+    }
+    return {
+      tier1: { from: 0, to: 0 },
+      tier2: { from: 0, to: 0 },
+      tier3: { from: 0, to: 0 }
+    };
   });
 
   const handleRangeChange = (tier: 'tier1' | 'tier2' | 'tier3', field: 'from' | 'to', value: string) => {
     const numValue = parseInt(value) || 0;
-    setTierRanges(prev => ({
-      ...prev,
+    const newRanges = {
+      ...tierRanges,
       [tier]: {
-        ...prev[tier],
+        ...tierRanges[tier],
         [field]: numValue
       }
-    }));
+    };
+    setTierRanges(newRanges);
+    // Сохранение в localStorage при каждом изменении
+    localStorage.setItem('tierRanges', JSON.stringify(newRanges));
   };
 
   const validateRanges = () => {

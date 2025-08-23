@@ -351,8 +351,8 @@ const AppInner: React.FC = () => {
                     console.log('Proxies check completed');
                   } catch (error) {
                     console.error('Error checking proxies:', error);
-                    const errorMsg = (error as any)?.response?.data?.error || (error as any)?.message || 'Неизвестная ошибка';
-                    showNotification('Ошибка проверки прокси: ' + errorMsg, 'error');
+                    const errorMsg = (error as any)?.response?.data?.error || (error as any)?.message || t('errors.unknown');
+                    showNotification(t('errors.proxyCheck') + errorMsg, 'error');
                   }
                 }}
                 className={cn(
@@ -481,8 +481,8 @@ const AppInner: React.FC = () => {
                       setIsMobileMenuOpen(false);
                     } catch (error) {
                       console.error('Error checking proxies:', error);
-                      const errorMsg = (error as any)?.response?.data?.error || (error as any)?.message || 'Неизвестная ошибка';
-                      showNotification('Ошибка проверки прокси: ' + errorMsg, 'error');
+                      const errorMsg = (error as any)?.response?.data?.error || (error as any)?.message || t('errors.unknown');
+                      showNotification(t('errors.proxyCheck') + errorMsg, 'error');
                     }
                   }}
                   className={cn(
