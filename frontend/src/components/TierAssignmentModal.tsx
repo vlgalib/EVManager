@@ -14,9 +14,9 @@ const TierAssignmentModal: React.FC<TierAssignmentModalProps> = ({ isOpen, onClo
   const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
   const [tierRanges, setTierRanges] = useState({
-    tier1: { from: 1, to: 42 },
-    tier2: { from: 43, to: 352 },
-    tier3: { from: 353, to: 732 }
+    tier1: { from: 0, to: 0 },
+    tier2: { from: 0, to: 0 },
+    tier3: { from: 0, to: 0 }
   });
 
   const handleRangeChange = (tier: 'tier1' | 'tier2' | 'tier3', field: 'from' | 'to', value: string) => {
