@@ -10,9 +10,10 @@ import { useTheme } from '../contexts/ThemeContext';
 
 interface WalletsTabProps {
   status: ServerStatus | null;
+  forceRefresh?: number;
 }
 
-const WalletsTab: React.FC<WalletsTabProps> = ({ status }) => {
+const WalletsTab: React.FC<WalletsTabProps> = ({ status, forceRefresh }) => {
   const { t } = useLanguage();
   const { theme } = useTheme();
   const [wallets, setWallets] = useState<WalletData[]>([]);
@@ -141,6 +142,14 @@ const WalletsTab: React.FC<WalletsTabProps> = ({ status }) => {
     
     prevProcessingStatus.current = currentProcessing;
   }, [status?.isProcessing, status?.processedWalletsCount]);
+
+  // Принудительное обновление кошельков (например, после назначения тиров)
+  useEffect(() => {
+    if (forceRefresh && forceRefresh > 0) {
+      console.log('WalletsTab: Force refreshing wallets due to external trigger');
+      fetchWallets(false); // Без автовыбора при принудительном обновлении
+    }
+  }, [forceRefresh]);
 
   useEffect(() => {
     let list = [...wallets];

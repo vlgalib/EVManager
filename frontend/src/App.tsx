@@ -32,6 +32,7 @@ const AppInner: React.FC = () => {
   const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [forceWalletsRefresh, setForceWalletsRefresh] = useState(0);
   const { theme } = useTheme();
   const { showNotification } = useNotification();
   const { language, setLanguage, t } = useLanguage();
@@ -233,7 +234,7 @@ const AppInner: React.FC = () => {
       case 'overview':
         return <OverviewTab />;
       case 'wallets':
-        return <WalletsTab status={status} />;
+        return <WalletsTab status={status} forceRefresh={forceWalletsRefresh} />;
       case 'tokens':
         return <TokensTab />;
       case 'protocols':
@@ -600,7 +601,8 @@ const AppInner: React.FC = () => {
       {/* Tier Assignment Modal */}
       <TierAssignmentModal 
         isOpen={isTierModalOpen} 
-        onClose={() => setIsTierModalOpen(false)} 
+        onClose={() => setIsTierModalOpen(false)}
+        onTiersAssigned={() => setForceWalletsRefresh(prev => prev + 1)}
       />
 
       {/* Donate Modal */}

@@ -7,9 +7,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface TierAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onTiersAssigned?: () => void;
 }
 
-const TierAssignmentModal: React.FC<TierAssignmentModalProps> = ({ isOpen, onClose }) => {
+const TierAssignmentModal: React.FC<TierAssignmentModalProps> = ({ isOpen, onClose, onTiersAssigned }) => {
   const { showNotification, showNotificationWithKey } = useNotification();
   const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -100,6 +101,11 @@ const TierAssignmentModal: React.FC<TierAssignmentModalProps> = ({ isOpen, onClo
         showNotificationWithKey(result.messageKey, result.message || t('tiers.successMessage', { count: result.updated }), 'success', params);
       } else {
         showNotification(t('tiers.successMessage', { count: result.updated }), 'success');
+      }
+      
+      // Уведомляем родительский компонент об успешном назначении тиров
+      if (onTiersAssigned) {
+        onTiersAssigned();
       }
       
       onClose();
